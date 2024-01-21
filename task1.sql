@@ -39,7 +39,7 @@ create or replace PACKAGE BODY log_util AS
         ELSE
             v_text := p_text;
         END IF;
-        to_log(p_appl_proc => p_proc_name, p_message => p_text);
+        to_log(p_appl_proc => p_proc_name, p_message => v_text);
         --to_log(p_appl_proc => p_proc_name, p_message => NULL);
 
     END log_start;
@@ -52,7 +52,7 @@ create or replace PACKAGE BODY log_util AS
         ELSE
             v_text := p_text;
         END IF;
-        to_log(p_appl_proc => p_proc_name, p_message => p_text);
+        to_log(p_appl_proc => p_proc_name, p_message => v_text);
         --to_log(p_appl_proc => p_proc_name, p_message => NULL);
 
     END log_finish;
@@ -65,7 +65,7 @@ create or replace PACKAGE BODY log_util AS
         ELSE
             v_text := p_text;
         END IF;
-        to_log(p_appl_proc => p_proc_name, p_message => p_text);
+        to_log(p_appl_proc => p_proc_name, p_message => v_text);
         --to_log(p_appl_proc => p_proc_name, p_message => NULL);
 
 
@@ -94,10 +94,10 @@ SELECT * FROM logs;
 DECLARE
     p_text VARCHAR2(300):= 'some text';
 BEGIN
-   -- log_util.log_start(p_proc_name => 'log_start',  p_text => NULL); 
+   -- log_util.log_start(p_proc_name => 'log_start',  p_text => NULL);
    -- log_util.log_finish(p_proc_name => 'log_finish' );
-   -- log_util.log_error(p_proc_name => 'log_error', p_sqlerrm => 'some text1', p_text => 'some text2');
-   log_util.log_error(p_proc_name => 'log_error', p_sqlerrm => 'some text1');
+    log_util.log_error(p_proc_name => 'log_error', p_sqlerrm => 'some text1', p_text => 'some text2');
+   --log_util.log_error(p_proc_name => 'log_error', p_sqlerrm => 'some text1');
 END;
 /
 
