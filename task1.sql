@@ -26,44 +26,47 @@ create or replace PACKAGE log_util AS
     PROCEDURE log_start(p_proc_name IN VARCHAR2, p_text IN VARCHAR2 DEFAULT NULL);
     PROCEDURE log_finish(p_proc_name IN VARCHAR2, p_text IN VARCHAR2 DEFAULT NULL);
     PROCEDURE log_error(p_proc_name IN VARCHAR2, p_sqlerrm IN VARCHAR2, p_text IN VARCHAR2 DEFAULT NULL);
-   
+    PROCEDURE to_log(p_appl_proc IN VARCHAR2, p_message IN VARCHAR2);
 END log_util;
 
 
 create or replace PACKAGE BODY log_util AS 
     PROCEDURE log_start(p_proc_name IN VARCHAR2, p_text IN VARCHAR2 DEFAULT NULL) IS
-        v_text VARCHAR2(50);
+        v_text VARCHAR2(300);
     BEGIN
         IF p_text IS NULL THEN
             v_text := 'Старт логування, назва процесу = ' || p_proc_name;
         ELSE
             v_text := p_text;
         END IF;
-        dbms_output.put_line (v_text);
+        to_log(p_appl_proc => p_proc_name, p_message => p_text);
+        --to_log(p_appl_proc => p_proc_name, p_message => NULL);
 
     END log_start;
     ----------
     PROCEDURE log_finish(p_proc_name IN VARCHAR2, p_text IN VARCHAR2 DEFAULT NULL) IS 
-        v_text VARCHAR2(50);
+        v_text VARCHAR2(300);
     BEGIN
         IF p_text IS NULL THEN
             v_text := 'Завершення логування, назва процесу =  ' || p_proc_name;
         ELSE
             v_text := p_text;
         END IF;
-        dbms_output.put_line (v_text);
+        to_log(p_appl_proc => p_proc_name, p_message => p_text);
+        --to_log(p_appl_proc => p_proc_name, p_message => NULL);
 
     END log_finish;
     ----------
     PROCEDURE log_error(p_proc_name IN VARCHAR2, p_sqlerrm IN VARCHAR2, p_text IN VARCHAR2 DEFAULT NULL) IS 
-        v_text VARCHAR2(50);
+        v_text VARCHAR2(300);
     BEGIN
         IF p_text IS NULL THEN
             v_text :=  'В процедурі ' || p_proc_name || ' сталася помилка. ' || p_sqlerrm;
         ELSE
             v_text := p_text;
         END IF;
-        dbms_output.put_line (v_text);
+        to_log(p_appl_proc => p_proc_name, p_message => p_text);
+        --to_log(p_appl_proc => p_proc_name, p_message => NULL);
 
 
     END log_error;
@@ -82,17 +85,6 @@ END log_util;
 
 
 
-DECLARE
-    p_text VARCHAR2(50):= 'some text';
- 
-BEGIN
-    to_log(p_appl_proc => 'log_start', p_message => NULL);
-    to_log(p_appl_proc => 'log_finish', p_message => NULL);
-    to_log(p_appl_proc => 'log_finish', p_message => p_text);
-    to_log(p_appl_proc => 'log_error', p_message => NULL);
-    to_log(p_appl_proc => 'log_error',  p_message => p_text);
-END;
-/
 
 
 
@@ -100,12 +92,12 @@ SELECT * FROM logs;
 
 
 DECLARE
-    --p_text VARCHAR2(50):= 'some text';
+    p_text VARCHAR2(300):= 'some text';
 BEGIN
-    log_util.log_start(p_proc_name => 'log_start',  p_text => NULL); -- Ne rabotaet!!!!!!
-    log_util.log_finish(p_proc_name => 'log_finish', p_text => 'some text');
-    log_util.log_error(p_proc_name => 'log_error', p_sqlerrm => 'some text', p_text => 'some text');
-    
+   -- log_util.log_start(p_proc_name => 'log_start',  p_text => NULL); 
+   -- log_util.log_finish(p_proc_name => 'log_finish' );
+   -- log_util.log_error(p_proc_name => 'log_error', p_sqlerrm => 'some text1', p_text => 'some text2');
+   log_util.log_error(p_proc_name => 'log_error', p_sqlerrm => 'some text1');
 END;
 /
 
