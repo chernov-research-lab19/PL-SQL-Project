@@ -36,7 +36,7 @@ create or replace PACKAGE util AS
                             p_hire_date IN DATE DEFAULT trunc(sysdate, 'dd'),
                             p_job_id IN VARCHAR2,
                             p_salary IN NUMBER,
-                            p_commission_pct IN VARCHAR2 DEFAULT NULL,
+                            p_commission_pct IN NUMBER DEFAULT NULL,
                             p_manager_id IN NUMBER DEFAULT 100,
                             p_department_id IN NUMBER);
 END util;
@@ -50,7 +50,7 @@ create or replace PACKAGE BODY util AS PROCEDURE add_employee(
                             p_hire_date IN DATE DEFAULT trunc(sysdate, 'dd'),
                             p_job_id IN VARCHAR2,
                             p_salary IN NUMBER,
-                            p_commission_pct IN VARCHAR2 DEFAULT NULL,
+                            p_commission_pct IN NUMBER DEFAULT NULL,
                             p_manager_id IN NUMBER DEFAULT 100,
                             p_department_id IN NUMBER) IS
         v_text VARCHAR2(300);
@@ -60,10 +60,24 @@ create or replace PACKAGE BODY util AS PROCEDURE add_employee(
         v_is_exist_dep NUMBER;
         v_min_sal  NUMBER;
         v_max_sal  NUMBER;
-        v_cur_date DATE;
-        v_cur_time DATE;
+        v_cur_date VARCHAR2(10);
+        v_cur_time VARCHAR2(10);
+        v_employeeid NUMBER;
+        
+       FUNCTION get_max_employeeid RETURN NUMBER IS
+            v_employeeid NUMBER;
+            BEGIN
+            SELECT NVL(MAX(employee_id),0)+1
+                INTO v_employeeid
+                FROM employees;
+            RETURN v_employeeid;
+        END get_max_employeeid;
+            
+        
         
     BEGIN
+    
+     
         log_util.log_start(p_proc_name => 'add_employee',  p_text => 'add new employee - start');
         
           -- Перевірити, чи існує переданий код посади (P_JOB_ID) в таблиці JOBS. 
@@ -117,33 +131,30 @@ create or replace PACKAGE BODY util AS PROCEDURE add_employee(
             -- Перевірити день і час при вставці. Неможливо додавати нового співробітника у суботу і неділю, а також з 18:01 до 07:59. 
             -- Якщо нового співробітника додають у недозволений час, викликати 
             -- помилку - RAISE_APPLICATION_ERROR(-20001,'Ви можете додавати нового співробітника лише в робочий час').
+           
+           -- Ne prazue!
             <<check_DATE_TIME>>
             BEGIN
                
-                SELECT TO_CHAR(SYSDATE, 'DY') INTO v_cur_date FROM DUAL;
-                SELECT TO_CHAR(SYSTIMESTAMP, 'HH24:MI') INTO v_cur_time FROM DUAL;
-                IF ((v_cur_date = 'НД.') OR (v_cur_date = 'СБ.')) AND ((v_cur_time <= '07:59') OR (v_cur_time >= '18:01'))  THEN
+                SELECT TO_CHAR(SYSDATE, 'DY', 'NLS_DATE_LANGUAGE=UKRAINIAN') INTO v_cur_date FROM DUAL;
+                SELECT TO_CHAR(SYSTIMESTAMP, 'HH24') INTO v_cur_time FROM DUAL;
+                IF ((v_cur_date = 'НД.') OR (v_cur_date = 'СБ.')) OR ((v_cur_time < '08') OR (v_cur_time > '18'))  THEN
                      RAISE_APPLICATION_ERROR(-20001,'Ви можете додавати нового співробітника лише в робочий час');
                 END IF;
           END check_DATE_TIME;
 
 
 
-        
-            INSERT INTO employees(first_name, last_name, email, phone_number, hire_date, job_id, salary, commission_pct, manager_id, department_id)
-                VALUES (p_first_name, p_last_name, p_email, p_phone_number, p_hire_date, p_job_id, p_salary, p_commission_pct, p_manager_id, p_department_id);
+            v_employeeid := get_max_employeeid();
+            INSERT INTO employees(employee_id, first_name, last_name, email, phone_number, hire_date, job_id, salary, commission_pct, manager_id, department_id)
+                VALUES (v_employeeid, p_first_name, p_last_name, p_email, p_phone_number, p_hire_date, p_job_id, p_salary, p_commission_pct, p_manager_id, p_department_id);
                 --po_err := 'Spivrobitnik '||p_first_name||' успішно додан';
-            EXCEPTION
-                WHEN job_err THEN
-                    raise_application_error(-20001,'Введено неіснуючий код посади');
-                WHEN dep_err THEN
-                    raise_application_error(-20001,'Введено неіснуючий ідентифікатор відділу');
-                WHEN dup_val_on_index THEN
-                    raise_application_error(-20002, 'Посада '||p_job_id||' вже існує');
+                dbms_output.put_line('Співробітник '||p_first_name|| ' ' || p_last_name || ' КОД ПОСАДИ ' || 'p_job_id'  || 'ІД ДЕПАРТАМЕНТУ ' || p_department_id || ' успішно доданий до  .');
+           
+                EXCEPTION
                 WHEN OTHERS THEN
                     raise_application_error(-20003, 'Виникла помилка при додаванні нов spivrobitn. '|| SQLERRM);
-                    
-                    log_util.log_error. -- ne ponimau gde eto vizivat
+                    log_util.log_error(p_proc_name => 'add_employee', p_sqlerrm  => 'Hz??', p_text => 'Eroor, error...');
         
         
         log_util.log_finish(p_proc_name => 'add_employee',  p_text => 'add new employee - finish');
@@ -155,15 +166,15 @@ END util;
 DECLARE
     p_text VARCHAR2(300):= 'some text';
 BEGIN
-   util.add_employee( p_first_name => 'Ivan',
-                      p_last_name => 'Ivanov',
-                      p_email => 'eee@mail.com',
+   util.add_employee( p_first_name => 'Sidor',
+                      p_last_name => 'Sidorov',
+                      p_email => 'hhh@mail.com',
                       p_phone_number => '233467787',
                       p_hire_date =>  trunc(sysdate, 'dd'),
                       p_job_id => 'IT_QA',
-                      p_salary => 4000,
-                      p_commission_pct => '12',
-                      p_manager_id => 110,
+                      p_salary => 6000,
+                      p_commission_pct => 0.5,
+                      p_manager_id => 10,
                       p_department_id => 110);
      
                     
@@ -182,15 +193,21 @@ END;
                             p_department_id IN NUMBER*/
        
 --tests
-SELECT * FROM logs;
+SELECT * FROM logs
+ORDER BY  log_date;
+
 SELECT * FROM jobs;
 SELECT * FROM departments;
+SELECT * FROM employees;
+
 SELECT MIN_SALARY, MAX_SALARY FROM jobs
 WHERE job_id = 'IT_QA';
 
 SELECT CURRENT_TIMESTAMP FROM DUAL;
-SELECT TO_CHAR(SYSTIMESTAMP, 'HH24:MI') AS "Current Time" FROM DUAL;
+
+SELECT TO_CHAR(SYSTIMESTAMP, 'HH24') AS "Current Time" FROM DUAL;
 SELECT TO_CHAR(SYSDATE, 'DY') AS "Day of the Week" FROM DUAL;
+
 SELECT trunc(sysdate,'dd') as "поточний день без секунд" FROM DUAL;
 --
                       
