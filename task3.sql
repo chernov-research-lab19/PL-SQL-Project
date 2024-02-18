@@ -1,7 +1,6 @@
 /*3. Створення механізму звільнення існуючого співробітника
 
 Опис задачі: в пакеті util створити процедуру fire_an_employee яка б звільняла інснуючого співробітника з таблиці employees
-
 Розробити процедуру з назвою fire_an_employee, з такими параметрами:
    
    1  Викликати процедуру log_util.log_start
@@ -19,12 +18,9 @@
 
    5 Записати дані в таблицю і історичну employees_history. Архитектуру таблиці продумати самостійно. 
 
-   6 Викликати процедуру log_util.log_finish
+   6 Викликати процедуру log_util.log_finish */
 
-
-*/
-
-CREATE TABLE employees_history 
+CREATE TABLE employees_history2 
    (	
     employee_id NUMBER, 
 	first_name VARCHAR2(50),
@@ -32,19 +28,15 @@ CREATE TABLE employees_history
     email VARCHAR2(50),
     phone_number VARCHAR2(50),
     hire_date DATE , 
-    job_id NUMBER, 
+    job_id VARCHAR2(10), 
     salary NUMBER,
     department_id NUMBER,
-	LOG_DATE DATE DEFAULT SYSDATE
+	LOG_DATE VARCHAR2(40)
    );
 
-
-create or replace PACKAGE util AS
-    PROCEDURE fire_an_employee( p_employee_id IN NUMBER);
-END util;
-
-
-create or replace PACKAGE BODY util AS PROCEDURE fire_an_employee(
+create or replace PACKAGE BODY util AS 
+    
+ PROCEDURE fire_an_employee(
                            p_employee_id IN NUMBER) IS
         v_text VARCHAR2(300);
         v_employee_id NUMBER;
@@ -53,18 +45,18 @@ create or replace PACKAGE BODY util AS PROCEDURE fire_an_employee(
         v_email VARCHAR2(50);
         v_phone_number VARCHAR2(50);
         v_hire_date DATE; 
-        v_job_id NUMBER; 
+        v_job_id VARCHAR2(10); 
         v_salary NUMBER;
         v_department_id NUMBER;
-        v_LOG_DATE DATE DEFAULT SYSDATE;
- 
-    BEGIN
+        v_LOG_DATE VARCHAR2(40);
+        v_cur_date VARCHAR2(10);
+        v_cur_time VARCHAR2(10);
+     BEGIN
 
         log_util.log_start(p_proc_name => 'fire_an_employee',  p_text => 'fire_an_employee - start');
         
-          /* Перевіряти чи існує p_employee_id, що передається в таблиці EMPLOYEES. 
-   Якщо передали не існуючий ід співробітника, тоді помилка - RAISE_APPLICATION_ERROR(-20001,'Переданий співробітник не існує ')
-   */
+/* Перевіряти чи існує p_employee_id, що передається в таблиці EMPLOYEES. 
+   Якщо передали не існуючий ід співробітника, тоді помилка - RAISE_APPLICATION_ERROR(-20001,'Переданий співробітник не існує ')   */
             <<check_p_employee_id>>
             BEGIN
                 SELECT COUNT(*)
@@ -82,62 +74,44 @@ create or replace PACKAGE BODY util AS PROCEDURE fire_an_employee(
             <<check_DATE_TIME>>
             BEGIN
                
-                SELECT TO_CHAR(SYSDATE, 'DY', 'NLS_DATE_LANGUAGE=UKRAINIAN') INTO v_cur_date FROM DUAL;
+                SELECT TO_CHAR(SYSDATE-3, 'DY', 'NLS_DATE_LANGUAGE=UKRAINIAN') INTO v_cur_date FROM DUAL;
                 SELECT TO_CHAR(SYSTIMESTAMP, 'HH24') INTO v_cur_time FROM DUAL;
                 IF ((v_cur_date = 'НД.') OR (v_cur_date = 'СБ.')) OR ((v_cur_time < '08') OR (v_cur_time > '18'))  THEN
                      RAISE_APPLICATION_ERROR(-20001,'Ви можете видаляти співробітника лише в робочий час');
                 END IF;
-          END check_DATE_TIME;
+           END check_DATE_TIME;
 
-
-        
            SELECT 
-           em.employee_id INTO v_employee_id,
-           em.first_name INTO v_first_name, 
-           em.last_name INTO v_last_name,  
-           em.email INTO v_email,   
-           em.phone_number INTO v_phone_number,
-           em.hire_date  INTO v_hire_date,  
-           em.job_id INTO v_job_id, 
-           em.salary  INTO v_salary,  
-           em.department_id INTO v_department_id
-            
-          FROM employees em
-          WHERE em.employee_id =  p_employee_id; 
+           em.employee_id, em.first_name, em.last_name, em.email, em.phone_number, em.hire_date, em.job_id, em.salary, em.department_id
+           INTO v_employee_id, v_first_name, v_last_name, v_email, v_phone_number, v_hire_date, v_job_id, v_salary, v_department_id
+           FROM employees em
+           WHERE em.employee_id =  p_employee_id;
 
-
-
-
-            DELETE FROM employees em
-            WHERE em.employee_id =  p_employee_id; 
+           DELETE FROM employees em
+           WHERE em.employee_id =  p_employee_id; 
               --COMMIT;
-            dbms_output.put_line('Співробітник ' || v_first_name || ' ' || v_last_name || ' '  || job_id || ' '|| v_department_id || ' Deleted.');
-            
- 
-           
-                EXCEPTION
-                WHEN OTHERS THEN
-                    raise_application_error(-20003, 'Виникла помилка при delete spivrobitn. '|| SQLERRM);
-                    log_util.log_error(p_proc_name => 'fire_an_employee', p_sqlerrm  => 'Hz??', p_text => 'Eroor, error...');
-        
+           dbms_output.put_line('Співробітник ' || v_first_name || ' ' || v_last_name || ' '  || v_job_id || ' '|| v_department_id || ' Deleted.');
+
         /* Записати дані в таблицю і історичну employees_history.*/
         
-             INSERT INTO employees_history(employee_id, first_name, last_name, email, phone_number, hire_date, job_id, salary, department_id, LOG_DATE)
-                    VALUES (v_employeeid, p_first_name, p_last_name, p_email, p_phone_number, p_hire_date, p_job_id, p_salary, p_department_id, SYSDATE);
-                     dbms_output.put_line('Співробітник '||p_first_name|| ' ' || p_last_name || ' КОД ПОСАДИ ' || 'p_job_id'  || ' added to employees_history');
-                  
+         INSERT INTO employees_history2(employee_id, first_name, last_name, email, phone_number, hire_date, job_id, salary, department_id, LOG_DATE)
+         VALUES (v_employee_id, v_first_name, v_last_name, v_email, v_phone_number, v_hire_date, v_job_id, v_salary, v_department_id, TO_CHAR(SYSDATE));
+         dbms_output.put_line('Співробітник '||v_first_name|| ' ' || v_last_name || ' КОД ПОСАДИ ' || v_job_id  || ' added to employees_history2');
          log_util.log_finish(p_proc_name => 'fire_an_employee',  p_text => 'fire_an_employee - finish');
-    END fire_an_employee;
-END util;
 
+         EXCEPTION
+         WHEN OTHERS THEN
+             raise_application_error(-20003, 'Виникла помилка при delete spivrobitn. '|| SQLERRM);
+             log_util.log_error(p_proc_name => 'fire_an_employee', p_sqlerrm  => 'Hz??', p_text => 'Eroor, error...');
+   END fire_an_employee;
+END util;
 
 
 DECLARE
     p_text VARCHAR2(300):= 'some text';
 BEGIN
-   util.fire_an_employee(p_employee_id => 110);
-     
-                    
+   util.fire_an_employee(p_employee_id => 208);
+  -- rollback;  
 END;
 /
 
@@ -145,10 +119,34 @@ END;
 --tests
 SELECT * FROM logs
 ORDER BY  log_date;
-SELECT * FROM employees_history;
+SELECT * FROM employees_history2;
 SELECT * FROM employees;
 
+/*
 
-
+DECLARE
+        
+        v_employee_id NUMBER;
+        v_first_name VARCHAR2(50);
+        v_last_name VARCHAR2(50);
+        v_email VARCHAR2(50);
+        v_phone_number VARCHAR2(50);
+        v_hire_date DATE; 
+        v_job_id VARCHAR2(10) ; 
+        v_salary NUMBER;
+        v_department_id NUMBER;
+BEGIN     
+        SELECT  em.employee_id, em.first_name, em.last_name, em.email, em.phone_number, em.hire_date, em.job_id, em.salary, em.department_id
+        INTO v_employee_id, v_first_name, v_last_name, v_email, v_phone_number, v_hire_date, v_job_id, v_salary, v_department_id
+        FROM employees em
+        WHERE em.employee_id =  108;
+       
+        
+        INSERT INTO employees_history2(employee_id, first_name, last_name, email, phone_number, hire_date, job_id, salary, department_id, LOG_DATE)
+        VALUES (v_employee_id, v_first_name, v_last_name, v_email, v_phone_number, v_hire_date, v_job_id, v_salary, v_department_id, TO_CHAR(SYSDATE));
+        dbms_output.put_line('Співробітник '||v_first_name|| ' ' || v_last_name || ' КОД ПОСАДИ ' || v_job_id  || ' added to employees_history');
+        
+END;
+/*/
 
                       
