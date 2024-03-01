@@ -42,9 +42,9 @@ CREATE TABLE sys_params
 BEGIN
 sys.dbms_scheduler.create_job(job_name => 'UPDATE_CURR_PRG',
 job_type => 'PLSQL_BLOCK',
-job_action => 'begin api_nbu_sync; end;',
+job_action => 'begin util.api_nbu_sync; end;',
 start_date => SYSDATE,
-repeat_interval => 'FREQ=DAILY;BYHOUR=6;BYMINUTE=00', -- кожень день в 18:00
+repeat_interval => 'FREQ=DAILY;BYHOUR=6;BYMINUTE=00', -- кожень день в 6:00
 end_date => TO_DATE(NULL),
 job_class => 'DEFAULT_JOB_CLASS',
 enabled => TRUE,
@@ -68,9 +68,11 @@ SELECT * FROM all_scheduler_jobs sj;
 
 
 ROLLBACK;     
+
 --tests
 SELECT * FROM sys_params;
 SELECT * FROM cur_exchange;
+DELETE FROM cur_exchange;
 
 
 --
